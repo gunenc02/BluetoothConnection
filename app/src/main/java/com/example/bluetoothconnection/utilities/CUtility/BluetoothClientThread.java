@@ -1,31 +1,32 @@
-package com.example.bluetoothconnection.utilities;
+package com.example.bluetoothconnection.utilities.CUtility;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.example.bluetoothconnection.activities.MainActivity;
+import com.example.bluetoothconnection.service.BluetoothService;
+import com.example.bluetoothconnection.utilities.IUtility.IBluetoothConnection;
 
 import java.io.IOException;
 import java.util.UUID;
 
-public class BluetoothClientThread extends Thread{
+public class BluetoothClientThread extends Thread implements IBluetoothConnection {
 
     private final MainActivity ctx;
     private BluetoothSocket mmSocket;
     private final BluetoothDevice mmDevice;
     private final String NAME = "DEVICE";
     private final UUID MY_UUID= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    private final static String TAG = "Error in BluetoothClientThread";
+    private final static String TAG = "BluetoothClientThread";
     private final BluetoothAdapter bluetoothAdapter;
     public BluetoothClientThread(MainActivity ctx, BluetoothDevice device, BluetoothAdapter adapter){
         this.ctx = ctx;
-        BluetoothSocket tmp = null;
+        BluetoothSocket tmpSocket = null;
         mmDevice = device;
         this.bluetoothAdapter = adapter;
 
@@ -35,12 +36,13 @@ public class BluetoothClientThread extends Thread{
                 ctx.checkPermissions();
                 return;
             }
-            tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
+            tmpSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
         } catch (IOException e) {
             Log.e(TAG, "Socket's create() method failed", e);
-            tmp = null;
+            tmpSocket = null;
         }
-        mmSocket = tmp;
+        mmSocket = tmpSocket;
+
     }
 
     public void run() {
@@ -69,6 +71,8 @@ public class BluetoothClientThread extends Thread{
 
         // The connection attempt succeeded. Perform work associated with
         // the connection in a separate thread.
+        Toast.makeText(ctx, "Connection successful", Toast.LENGTH_LONG).show();
+        Log.i(TAG, "Connection established successfully");
         manageMyConnectedSocket(mmSocket);
     }
     // Closes the client socket and causes the thread to finish.
@@ -81,6 +85,18 @@ public class BluetoothClientThread extends Thread{
     }
 
     private void manageMyConnectedSocket(BluetoothSocket mmSocket) {
+
+        ctx.stopBluetoothServer();
+        BluetoothService service = new BluetoothService();
     }
 
+    @Override
+    public void sendMessage() {
+
+    }
+
+    @Override
+    public void receiveMessage() {
+
+    }
 }

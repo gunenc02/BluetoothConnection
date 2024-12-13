@@ -17,9 +17,9 @@ public class BluetoothService {
     // Defines several constants used when transmitting messages between the
     // service and the UI.
     private interface MessageConstants {
-        public static final int MESSAGE_READ = 0;
-        public static final int MESSAGE_WRITE = 1;
-        public static final int MESSAGE_TOAST = 2;
+        public final int MESSAGE_READ = 0;
+        public final int MESSAGE_WRITE = 1;
+        public final int MESSAGE_TOAST = 2;
     }
 
     private class ConnectedThread extends Thread {

@@ -1,4 +1,4 @@
-package com.example.bluetoothconnection.utilities;
+package com.example.bluetoothconnection.utilities.CUtility;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
@@ -9,11 +9,12 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.example.bluetoothconnection.activities.MainActivity;
+import com.example.bluetoothconnection.utilities.IUtility.IBluetoothConnection;
 
 import java.io.IOException;
 import java.util.UUID;
 
-public class BluetoothServerThread extends Thread {
+public class BluetoothServerThread extends Thread implements IBluetoothConnection {
     private BluetoothServerSocket mmServerSocket;
     private MainActivity ctx;
     private final String NAME = "DEVICE";
@@ -78,4 +79,13 @@ public class BluetoothServerThread extends Thread {
     private void manageMyConnectedSocket(BluetoothSocket socket) {
     }
 
+    @Override
+    public void sendMessage() {
+
+    }
+
+    @Override
+    public void receiveMessage() {
+
+    }
 }
