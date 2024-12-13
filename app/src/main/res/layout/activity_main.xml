@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Bluetooth Status Text -->
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Bluetooth Status: Unknown"
+        android:textSize="18sp"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Start Scanning Button -->
+    <Button
+        android:id="@+id/btn_scan_devices"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Scan for Devices"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Devices List Header -->
+    <TextView
+        android:id="@+id/tv_devices_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Found Devices:"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp" />
+
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:id="@+id/device_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+</LinearLayout>
