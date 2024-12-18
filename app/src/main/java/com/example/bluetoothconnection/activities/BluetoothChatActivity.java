@@ -17,7 +17,7 @@ public class BluetoothChatActivity extends AppCompatActivity {
     private Button sendButton, backButton;
     private ListView listView;
     private EditText editText;
-    private ArrayAdapter arrayAdapter;
+    private ArrayAdapter<ListView> arrayAdapter;
 
 
     @Override
@@ -26,7 +26,7 @@ public class BluetoothChatActivity extends AppCompatActivity {
         listView = findViewById(R.id.messages);
         sendButton = findViewById(R.id.button_send);
         backButton = findViewById(R.id.button_back);
-        editText = findViewById(R.id.message_input);
+        editText = findViewById(R.id.edit_text_message);
 
         arrayAdapter = new ArrayAdapter<>(this, 0);
 

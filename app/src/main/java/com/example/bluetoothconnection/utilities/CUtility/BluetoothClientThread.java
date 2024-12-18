@@ -4,6 +4,7 @@ import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.util.Log;
@@ -19,31 +20,26 @@ import java.util.UUID;
 
 public class BluetoothClientThread extends Thread implements IBluetoothConnection {
 
-    private final MainActivity ctx;
+    private final Context ctx;
     private BluetoothSocket mmSocket;
     private final BluetoothDevice mmDevice;
     private final String NAME = "DEVICE";
     private final UUID MY_UUID= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private final static String TAG = "BluetoothClientThread";
     private final BluetoothAdapter bluetoothAdapter;
-    public BluetoothClientThread(MainActivity ctx, BluetoothDevice device, BluetoothAdapter adapter){
+    private static BluetoothClientThread client;
+
+    public static BluetoothClientThread getClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, BluetoothSocket socket){
+        if(client == null){
+            client = new BluetoothClientThread(ctx, device, adapter, socket);
+        }
+        return client;
+    }
+    public BluetoothClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, BluetoothSocket socket){
         this.ctx = ctx;
-        BluetoothSocket tmpSocket = null;
+        this.mmSocket = socket;
         mmDevice = device;
         this.bluetoothAdapter = adapter;
-
-        try {
-            if(ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
-                Toast.makeText(ctx, "Necessary permissions should be given", Toast.LENGTH_SHORT).show();
-                ctx.checkPermissions();
-                return;
-            }
-            tmpSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
-        } catch (IOException e) {
-            Log.e(TAG, "Socket's create() method failed", e);
-            tmpSocket = null;
-        }
-        mmSocket = tmpSocket;
 
     }
 
@@ -52,7 +48,7 @@ public class BluetoothClientThread extends Thread implements IBluetoothConnectio
         if(ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
             ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
             Toast.makeText(ctx, "Necessary permissions should be given", Toast.LENGTH_SHORT).show();
-            ctx.checkPermissions();
+            checkPermissions();
             return;
         }
         bluetoothAdapter.cancelDiscovery();
@@ -71,22 +67,6 @@ public class BluetoothClientThread extends Thread implements IBluetoothConnectio
             }
             return;
         }
-
-        // The connection attempt succeeded. Perform work associated with
-        // the connection in a separate thread.
-        if (mmSocket.isConnected()){
-            Intent intent = new Intent(ctx, BluetoothChatActivity.class);
-            intent.putExtra("device_name", mmDevice.getName());
-            intent.putExtra("device_address", mmDevice.getAddress());
-
-            // Start the new activity and clear the current one
-            ctx.startActivity(intent);
-            Toast.makeText(ctx, "Connection Successful!", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(ctx, "Connection Failed!", Toast.LENGTH_SHORT).show();
-            Log.i(TAG, "Sth wrong");
-        }
-
         manageMyConnectedSocket(mmSocket);
     }
     // Closes the client socket and causes the thread to finish.
@@ -95,6 +75,15 @@ public class BluetoothClientThread extends Thread implements IBluetoothConnectio
             mmSocket.close();
         } catch (IOException e) {
             Log.e(TAG, "Could not close the client socket", e);
+        }
+    }
+
+    private void checkPermissions(){
+        if (ctx.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
+                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
+                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
+                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
         }
     }
 

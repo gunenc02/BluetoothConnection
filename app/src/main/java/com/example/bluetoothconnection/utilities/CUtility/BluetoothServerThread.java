@@ -4,6 +4,7 @@ import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import android.widget.Toast;
@@ -16,7 +17,7 @@ import java.util.UUID;
 
 public class BluetoothServerThread extends Thread implements IBluetoothConnection {
     private BluetoothServerSocket mmServerSocket;
-    private MainActivity ctx;
+    private Context ctx;
     private final String NAME = "DEVICE";
     private final UUID MY_UUID= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private final BluetoothAdapter bluetoothAdapter;
@@ -32,7 +33,7 @@ public class BluetoothServerThread extends Thread implements IBluetoothConnectio
             // MY_UUID is the app's UUID string, also used by the client code.
             if(ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
                 Toast.makeText(ctx, "You need to give necessary permissions", Toast.LENGTH_SHORT).show();
-                ctx.checkPermissions();
+                checkPermissions();
                 return;
             }
             tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID);
@@ -73,6 +74,15 @@ public class BluetoothServerThread extends Thread implements IBluetoothConnectio
             mmServerSocket.close();
         } catch (IOException e) {
             Log.e(TAG, "Could not close the connect socket", e);
+        }
+    }
+
+    private void checkPermissions(){
+        if (ctx.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
+                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
+                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
+                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
         }
     }
 

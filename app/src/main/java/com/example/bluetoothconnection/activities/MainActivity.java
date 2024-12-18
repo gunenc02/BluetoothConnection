@@ -3,6 +3,7 @@ package com.example.bluetoothconnection.activities;
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -22,7 +23,9 @@ import com.example.bluetoothconnection.R;
 import com.example.bluetoothconnection.utilities.CUtility.BluetoothClientThread;
 import com.example.bluetoothconnection.utilities.CUtility.BluetoothServerThread;
 
+import java.io.IOException;
 import java.util.Set;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter bluetoothAdapter;
@@ -31,6 +34,9 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout deviceContainer;
     BluetoothServerThread server;
     BluetoothClientThread client; // if it is null, should not activate stop function
+    private final UUID MY_UUID= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    private final static String TAG = "MainActivity";
+    BluetoothSocket socket;
 
 
 
@@ -49,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
             tvStatus.setText("No Bluetooth Support");
             btnScanDevices.setEnabled(false);
             onDestroy();
+            return;
         }
         checkPermissions();
         updateBluetoothStatus();
@@ -140,11 +147,39 @@ public class MainActivity extends AppCompatActivity {
                 checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED){
             checkPermissions();
         }
-            client = new BluetoothClientThread(this, device, bluetoothAdapter);
-            client.start();
+
+        BluetoothSocket tmp = null;
+        try {
+            while(checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
+                Toast.makeText(this, "Necessary permissions should be given", Toast.LENGTH_SHORT).show();
+                checkPermissions();
+            }
+            tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
+        } catch (IOException e) {
+            Log.e(TAG, "Socket's create() method failed", e);
+            tmp = null;
+        }
+        socket = tmp;
+        client = BluetoothClientThread.getClientThread(this, device, bluetoothAdapter, socket);
+        client.start();
+
+        if (socket != null && socket.isConnected()){
+            Intent intent = new Intent(this, BluetoothChatActivity.class);
+            intent.putExtra("device_name", device.getName());
+            intent.putExtra("device_address", device.getAddress());
+
+            // Start the new activity and clear the current one
+            startActivity(intent);
+            Toast.makeText(this, "Connection Successful!", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Connection Failed!", Toast.LENGTH_SHORT).show();
+            Log.i(TAG, "Sth wrong");
+        }
+
+
     }
 
-    public void checkPermissions(){
+    private void checkPermissions(){
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
