@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         registerReceiver(bluetoothReceiver, filter);
         server = new BluetoothServerThread(this, bluetoothAdapter);
+        server.start();
     }
 
     private final BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
@@ -139,9 +140,8 @@ public class MainActivity extends AppCompatActivity {
                 checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED){
             checkPermissions();
         }
-            Toast.makeText(this, "Connecting to " + device.getName(), Toast.LENGTH_SHORT).show();
             client = new BluetoothClientThread(this, device, bluetoothAdapter);
-            Toast.makeText(this, "Connected to " + device.getName(), Toast.LENGTH_SHORT).show();
+            client.start();
     }
 
     public void checkPermissions(){

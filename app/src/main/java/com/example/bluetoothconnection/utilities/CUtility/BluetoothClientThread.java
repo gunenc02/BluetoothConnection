@@ -4,10 +4,12 @@ import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.bluetoothconnection.activities.BluetoothChatActivity;
 import com.example.bluetoothconnection.activities.MainActivity;
 import com.example.bluetoothconnection.service.BluetoothService;
 import com.example.bluetoothconnection.utilities.IUtility.IBluetoothConnection;
@@ -59,6 +61,7 @@ public class BluetoothClientThread extends Thread implements IBluetoothConnectio
             // Connect to the remote device through the socket. This call blocks
             // until it succeeds or throws an exception.
             mmSocket.connect();
+            Toast.makeText(ctx, "nothing wrong about the connect function", Toast.LENGTH_LONG).show();
         } catch (IOException connectException) {
             // Unable to connect; close the socket and return.
             try {
@@ -71,8 +74,19 @@ public class BluetoothClientThread extends Thread implements IBluetoothConnectio
 
         // The connection attempt succeeded. Perform work associated with
         // the connection in a separate thread.
-        Toast.makeText(ctx, "Connection successful", Toast.LENGTH_LONG).show();
-        Log.i(TAG, "Connection established successfully");
+        if (mmSocket.isConnected()){
+            Intent intent = new Intent(ctx, BluetoothChatActivity.class);
+            intent.putExtra("device_name", mmDevice.getName());
+            intent.putExtra("device_address", mmDevice.getAddress());
+
+            // Start the new activity and clear the current one
+            ctx.startActivity(intent);
+            Toast.makeText(ctx, "Connection Successful!", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(ctx, "Connection Failed!", Toast.LENGTH_SHORT).show();
+            Log.i(TAG, "Sth wrong");
+        }
+
         manageMyConnectedSocket(mmSocket);
     }
     // Closes the client socket and causes the thread to finish.
