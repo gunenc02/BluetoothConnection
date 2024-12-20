@@ -26,25 +26,25 @@ public class BluetoothServerThread extends Thread implements IBluetoothConnectio
     public BluetoothServerThread(MainActivity ctx, BluetoothAdapter adapter) {
         // Use a temporary object that is later assigned to mmServerSocket
         // because mmServerSocket is final.
-        BluetoothServerSocket tmp = null;
         this.bluetoothAdapter = adapter;
         this.ctx = ctx;
+    }
+
+    public void run() {
+        BluetoothSocket socket;
+        BluetoothServerSocket tmp;
         try {
             // MY_UUID is the app's UUID string, also used by the client code.
             if(ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
-                Toast.makeText(ctx, "You need to give necessary permissions", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(ctx, "You need to give necessary permissions", Toast.LENGTH_SHORT).show();
                 checkPermissions();
-                return;
             }
             tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID);
         } catch (IOException e) {
             Log.e(TAG, "Socket's listen() method failed", e);
+            return;
         }
         mmServerSocket = tmp;
-    }
-
-    public void run() {
-        BluetoothSocket socket = null;
         // Keep listening until exception occurs or a socket is returned.
         while (true) {
             try {
@@ -78,11 +78,30 @@ public class BluetoothServerThread extends Thread implements IBluetoothConnectio
     }
 
     private void checkPermissions(){
-        if (ctx.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
-                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
-                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
-                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
-                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+        String[] permissions = {
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_SCAN
+        };
+
+        boolean permissionNeeded = false;
+
+        for (String permission : permissions) {
+            if (ctx.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                permissionNeeded = true;
+                break;
+            }
+        }
+
+        if (permissionNeeded) {
+            if (ctx instanceof android.app.Activity) {
+                ((android.app.Activity) ctx).requestPermissions(permissions, 1);
+            } else {
+                Log.e(TAG, "Context is not an instance of Activity. Cannot request permissions.");
+                Toast.makeText(ctx, "Permissions cannot be requested.", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 

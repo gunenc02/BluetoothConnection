@@ -79,17 +79,35 @@ public class BluetoothClientThread extends Thread implements IBluetoothConnectio
     }
 
     private void checkPermissions(){
-        if (ctx.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
-                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
-                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
-                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
-                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+        String[] permissions = {
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_SCAN
+        };
+
+        boolean permissionNeeded = false;
+
+        for (String permission : permissions) {
+            if (ctx.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                permissionNeeded = true;
+                break;
+            }
+        }
+
+        if (permissionNeeded) {
+            if (ctx instanceof android.app.Activity) {
+                ((android.app.Activity) ctx).requestPermissions(permissions, 1);
+            } else {
+                Log.e(TAG, "Context is not an instance of Activity. Cannot request permissions.");
+                Toast.makeText(ctx, "Permissions cannot be requested.", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
     private void manageMyConnectedSocket(BluetoothSocket mmSocket) {
 
-        ctx.stopBluetoothServer();
         BluetoothService service = new BluetoothService();
     }
 
