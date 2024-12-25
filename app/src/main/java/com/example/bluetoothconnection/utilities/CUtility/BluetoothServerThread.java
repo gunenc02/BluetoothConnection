@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -14,8 +15,10 @@ import com.example.bluetoothconnection.utilities.IUtility.IBluetoothConnection;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 
 public class BluetoothServerThread extends Thread implements IBluetoothConnection {
+    private final CountDownLatch permissionLatch = new CountDownLatch(1);
     private BluetoothServerSocket mmServerSocket;
     private Context ctx;
     private final String NAME = "DEVICE";
@@ -32,20 +35,22 @@ public class BluetoothServerThread extends Thread implements IBluetoothConnectio
 
     public void run() {
         BluetoothSocket socket;
-        BluetoothServerSocket tmp;
+        BluetoothServerSocket tmp = null;
+
+        // Wait for permissions
+        if(ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
+            waitForPermissions();
+        }
+
         try {
-            // MY_UUID is the app's UUID string, also used by the client code.
-            if(ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
-                //Toast.makeText(ctx, "You need to give necessary permissions", Toast.LENGTH_SHORT).show();
-                checkPermissions();
-            }
             tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID);
         } catch (IOException e) {
             Log.e(TAG, "Socket's listen() method failed", e);
             return;
         }
         mmServerSocket = tmp;
-        // Keep listening until exception occurs or a socket is returned.
+
+        // Keep listening until a socket is accepted or an exception occurs
         while (true) {
             try {
                 socket = mmServerSocket.accept();
@@ -55,19 +60,37 @@ public class BluetoothServerThread extends Thread implements IBluetoothConnectio
             }
 
             if (socket != null) {
-                // A connection was accepted. Perform work associated with
-                // the connection in a separate thread.
-                try{
+                // Handle the connected socket
+                try {
                     manageMyConnectedSocket(socket);
                     mmServerSocket.close();
                     break;
-                } catch (Exception ex){
-                    Log.e(TAG, "In run function");
+                } catch (Exception ex) {
+                    Log.e(TAG, "Error managing connected socket", ex);
                 }
-
             }
         }
     }
+
+    private void waitForPermissions() {
+        new Thread(() -> {
+            while (ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "Permission wait interrupted", e);
+                }
+            }
+            permissionLatch.countDown();
+        }).start();
+
+        try {
+            permissionLatch.await(); 
+        } catch (InterruptedException e) {
+            Log.e(TAG, "Permission latch interrupted", e);
+        }
+    }
+
     // Closes the connect socket and causes the thread to finish.
     public void cancel() {
         try {
@@ -77,15 +100,27 @@ public class BluetoothServerThread extends Thread implements IBluetoothConnectio
         }
     }
 
-    private void checkPermissions(){
-        String[] permissions = {
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.BLUETOOTH,
-                Manifest.permission.BLUETOOTH_ADMIN,
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_SCAN
-        };
+    private void checkPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {  // API 31+
+            String[] permissions = {
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+            };
 
+            requestPermissionsIfNeeded(permissions);
+        } else {
+            String[] permissions = {
+                    Manifest.permission.BLUETOOTH,
+                    Manifest.permission.BLUETOOTH_ADMIN,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+            };
+
+            requestPermissionsIfNeeded(permissions);
+        }
+    }
+
+    private void requestPermissionsIfNeeded(String[] permissions) {
         boolean permissionNeeded = false;
 
         for (String permission : permissions) {

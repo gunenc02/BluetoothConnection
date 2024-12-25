@@ -57,15 +57,16 @@ public class MainActivity extends AppCompatActivity {
             onDestroy();
             return;
         }
-        checkPermissions();
         updateBluetoothStatus();
         btnScanDevices.setOnClickListener(v -> scanDevices());
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         registerReceiver(bluetoothReceiver, filter);
-        server = new BluetoothServerThread(this, bluetoothAdapter);
-        server.start();
+        if(checkPermissions()){
+            server = new BluetoothServerThread(this, bluetoothAdapter);
+            server.start();
+        }
     }
 
     private final BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
@@ -179,7 +180,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void checkPermissions(){
+    private Boolean checkPermissions(){
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
@@ -195,6 +196,7 @@ public class MainActivity extends AppCompatActivity {
                             Manifest.permission.BLUETOOTH_SCAN
                     }, 1);
         }
+        return true;
     }
 
     @Override
