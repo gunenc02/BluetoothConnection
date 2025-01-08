@@ -63,10 +63,8 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         registerReceiver(bluetoothReceiver, filter);
-        if(checkPermissions()){
-            server = new BluetoothServerThread(this, bluetoothAdapter);
-            server.start();
-        }
+        server = new BluetoothServerThread(this, bluetoothAdapter);
+        server.start();
     }
 
     private final BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
@@ -103,7 +101,6 @@ public class MainActivity extends AppCompatActivity {
                 checkSelfPermission(android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED){
-            Toast.makeText(this, "You need to give necessary permissions", Toast.LENGTH_LONG).show();
             checkPermissions();
         }
 
@@ -118,8 +115,6 @@ public class MainActivity extends AppCompatActivity {
                     addDeviceButton(device, true);  // Add paired devices as buttons
                 }
             }
-        } else {
-            Toast.makeText(this, "No device Found", Toast.LENGTH_SHORT);
         }
 
         bluetoothAdapter.startDiscovery();
@@ -127,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void addDeviceButton (BluetoothDevice device, boolean isPaired){
         if(checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
-            Toast.makeText(this, "permission required", Toast.LENGTH_LONG).show();
+            return;
         }
         Button deviceButton = new Button(this);
         String deviceInfo = (isPaired ? "Paired: " : "Detected: ") + device.getName() + " - " + device.getAddress();
@@ -151,8 +146,7 @@ public class MainActivity extends AppCompatActivity {
 
         BluetoothSocket tmp = null;
         try {
-            while(checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
-                Toast.makeText(this, "Necessary permissions should be given", Toast.LENGTH_SHORT).show();
+            if(checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
                 checkPermissions();
             }
             tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
@@ -168,35 +162,37 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(this, BluetoothChatActivity.class);
             intent.putExtra("device_name", device.getName());
             intent.putExtra("device_address", device.getAddress());
-
-            // Start the new activity and clear the current one
             startActivity(intent);
-            Toast.makeText(this, "Connection Successful!", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(this, "Connection Failed!", Toast.LENGTH_SHORT).show();
             Log.i(TAG, "Sth wrong");
         }
-
-
     }
 
-    private Boolean checkPermissions(){
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+    private void checkPermissions(){
+        String[] permissions = {
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_SCAN
+        };
 
-            requestPermissions(
-                    new String[]{
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.BLUETOOTH,
-                            Manifest.permission.BLUETOOTH_ADMIN,
-                            Manifest.permission.BLUETOOTH_CONNECT,
-                            Manifest.permission.BLUETOOTH_SCAN
-                    }, 1);
+        boolean permissionNeeded = false;
+
+        for (String permission : permissions) {
+            if (this.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                permissionNeeded = true;
+                break;
+            }
         }
-        return true;
+
+        if (permissionNeeded) {
+            if (this instanceof android.app.Activity) {
+                this.requestPermissions(permissions, 1);
+            } else {
+                Log.e(TAG, "Context is not an instance of Activity. Cannot request permissions.");
+            }
+        }
     }
 
     @Override

@@ -49,7 +49,6 @@ public class BluetoothClientThread extends Thread {
         // Cancel discovery because it otherwise slows down the connection.
         if(ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
             ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
-            Toast.makeText(ctx, "Necessary permissions should be given", Toast.LENGTH_SHORT).show();
             checkPermissions();
             return;
         }
@@ -59,9 +58,8 @@ public class BluetoothClientThread extends Thread {
             // Connect to the remote device through the socket. This call blocks
             // until it succeeds or throws an exception.
             mmSocket.connect();
-            Toast.makeText(ctx, "nothing wrong about the connect function", Toast.LENGTH_LONG).show();
         } catch (IOException connectException) {
-            // Unable to connect; close the socket and return.
+            Log.e(TAG, "Could not close the client socket", connectException);
             try {
                 mmSocket.close();
             } catch (IOException closeException) {
@@ -101,7 +99,6 @@ public class BluetoothClientThread extends Thread {
                 ((android.app.Activity) ctx).requestPermissions(permissions, 1);
             } else {
                 Log.e(TAG, "Context is not an instance of Activity. Cannot request permissions.");
-                Toast.makeText(ctx, "Permissions cannot be requested.", Toast.LENGTH_SHORT).show();
             }
         }
     }

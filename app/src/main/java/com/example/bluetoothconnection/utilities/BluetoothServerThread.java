@@ -148,7 +148,6 @@ public class BluetoothServerThread extends Thread {
                 ((android.app.Activity) ctx).requestPermissions(permissions, 1);
             } else {
                 Log.e(TAG, "Context is not an instance of Activity. Cannot request permissions.");
-                Toast.makeText(ctx, "Permissions cannot be requested.", Toast.LENGTH_SHORT).show();
             }
         }
     }
