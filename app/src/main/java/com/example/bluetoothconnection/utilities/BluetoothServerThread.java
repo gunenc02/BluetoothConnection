@@ -1,4 +1,4 @@
-package com.example.bluetoothconnection.utilities.CUtility;
+package com.example.bluetoothconnection.utilities;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
@@ -11,22 +11,37 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.example.bluetoothconnection.activities.MainActivity;
-import com.example.bluetoothconnection.utilities.IUtility.IBluetoothConnection;
 
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
-public class BluetoothServerThread extends Thread implements IBluetoothConnection {
+public class BluetoothServerThread extends Thread {
     private final CountDownLatch permissionLatch = new CountDownLatch(1);
     private BluetoothServerSocket mmServerSocket;
     private Context ctx;
     private final String NAME = "DEVICE";
     private final UUID MY_UUID= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private final BluetoothAdapter bluetoothAdapter;
-    private final static String TAG = "Error in BluetoothThread";
+    private final static String TAG = "Error in BluetoothServerThread";
+    private static BluetoothSocket socket;
+    private static BluetoothServerThread server = null;
 
-    public BluetoothServerThread(MainActivity ctx, BluetoothAdapter adapter) {
+    public static BluetoothServerThread getBluetoothServerThread(Context ctx, BluetoothAdapter adapter){
+        if(server == null){
+            return new BluetoothServerThread(ctx, adapter);
+        }
+        return server;
+    }
+
+    public static Boolean isExists(){
+        return server != null;
+    }
+
+    public static BluetoothSocket getSocket() {
+        return socket;
+    }
+    public BluetoothServerThread(Context ctx, BluetoothAdapter adapter) {
         // Use a temporary object that is later assigned to mmServerSocket
         // because mmServerSocket is final.
         this.bluetoothAdapter = adapter;
@@ -34,7 +49,6 @@ public class BluetoothServerThread extends Thread implements IBluetoothConnectio
     }
 
     public void run() {
-        BluetoothSocket socket;
         BluetoothServerSocket tmp = null;
 
         // Wait for permissions
@@ -62,7 +76,6 @@ public class BluetoothServerThread extends Thread implements IBluetoothConnectio
             if (socket != null) {
                 // Handle the connected socket
                 try {
-                    manageMyConnectedSocket(socket);
                     mmServerSocket.close();
                     break;
                 } catch (Exception ex) {
@@ -140,16 +153,4 @@ public class BluetoothServerThread extends Thread implements IBluetoothConnectio
         }
     }
 
-    private void manageMyConnectedSocket(BluetoothSocket socket) {
-    }
-
-    @Override
-    public void sendMessage() {
-
-    }
-
-    @Override
-    public void receiveMessage() {
-
-    }
 }

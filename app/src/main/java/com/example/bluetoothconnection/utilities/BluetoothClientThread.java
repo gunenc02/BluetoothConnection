@@ -1,27 +1,21 @@
-package com.example.bluetoothconnection.utilities.CUtility;
+package com.example.bluetoothconnection.utilities;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.example.bluetoothconnection.activities.BluetoothChatActivity;
-import com.example.bluetoothconnection.activities.MainActivity;
-import com.example.bluetoothconnection.service.BluetoothService;
-import com.example.bluetoothconnection.utilities.IUtility.IBluetoothConnection;
-
 import java.io.IOException;
 import java.util.UUID;
 
-public class BluetoothClientThread extends Thread implements IBluetoothConnection {
+public class BluetoothClientThread extends Thread {
 
     private final Context ctx;
-    private BluetoothSocket mmSocket;
+    private static BluetoothSocket mmSocket;
     private final BluetoothDevice mmDevice;
     private final String NAME = "DEVICE";
     private final UUID MY_UUID= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
@@ -35,9 +29,17 @@ public class BluetoothClientThread extends Thread implements IBluetoothConnectio
         }
         return client;
     }
+
+    public static Boolean isExists(){
+        return client != null;
+    }
+
+    public static BluetoothSocket getSocket(){
+        return mmSocket;
+    }
     public BluetoothClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, BluetoothSocket socket){
         this.ctx = ctx;
-        this.mmSocket = socket;
+        mmSocket = socket;
         mmDevice = device;
         this.bluetoothAdapter = adapter;
 
@@ -65,9 +67,7 @@ public class BluetoothClientThread extends Thread implements IBluetoothConnectio
             } catch (IOException closeException) {
                 Log.e(TAG, "Could not close the client socket", closeException);
             }
-            return;
         }
-        manageMyConnectedSocket(mmSocket);
     }
     // Closes the client socket and causes the thread to finish.
     public void cancel() {
@@ -106,18 +106,4 @@ public class BluetoothClientThread extends Thread implements IBluetoothConnectio
         }
     }
 
-    private void manageMyConnectedSocket(BluetoothSocket mmSocket) {
-
-        BluetoothService service = new BluetoothService();
-    }
-
-    @Override
-    public void sendMessage() {
-
-    }
-
-    @Override
-    public void receiveMessage() {
-
-    }
 }

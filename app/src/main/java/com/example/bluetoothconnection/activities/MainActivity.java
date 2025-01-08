@@ -20,8 +20,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.bluetoothconnection.R;
-import com.example.bluetoothconnection.utilities.CUtility.BluetoothClientThread;
-import com.example.bluetoothconnection.utilities.CUtility.BluetoothServerThread;
+import com.example.bluetoothconnection.utilities.BluetoothClientThread;
+import com.example.bluetoothconnection.utilities.BluetoothServerThread;
 
 import java.io.IOException;
 import java.util.Set;

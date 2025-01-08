@@ -14,8 +14,15 @@ public class BluetoothService {
     private static final String TAG = "MY_APP_DEBUG_TAG";
     private Handler handler; // handler that gets info from Bluetooth service
 
-    // Defines several constants used when transmitting messages between the
-    // service and the UI.
+    public BluetoothService(Handler handler){
+        this.handler = handler;
+    }
+
+    public ConnectedThread startConnectedThread(BluetoothSocket socket){
+        ConnectedThread thread = new ConnectedThread(socket);
+        thread.start();
+        return thread; // Need to be handled
+    }
     private interface MessageConstants {
         public final int MESSAGE_READ = 0;
         public final int MESSAGE_WRITE = 1;
@@ -72,7 +79,8 @@ public class BluetoothService {
         }
 
         // Call this from the main activity to send data to the remote device.
-        public void write(byte[] bytes) {
+        public void write(String text) {
+            byte[] bytes = text.getBytes();
             try {
                 mmOutStream.write(bytes);
 
