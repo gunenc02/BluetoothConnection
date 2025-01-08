@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -28,16 +29,22 @@ public class BluetoothChatActivity extends AppCompatActivity {
     private ArrayAdapter<ListView> arrayAdapter;
     private BluetoothService service;
 
+    public static final String TAG = "BluetoothChatActivity";
+    BluetoothService.ConnectedThread thread;
+
     private final Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(@NonNull Message msg) {
             switch (msg.what) {
                 case 0: // MESSAGE_READ
-                    // Handle read data here
+                    byte[] readBuffer = (byte[]) msg.obj;
+                    int bytesRead = msg.arg1;
+                    String receivedMessage = new String(readBuffer, 0, bytesRead);
+                    Log.d(TAG, "Message received: " + receivedMessage);
                     break;
                 case 1: // MESSAGE_WRITE
                     String text = editText.getText().toString();
-
+                    thread.write(text);
                     break;
                 case 2: // MESSAGE_TOAST
                     // Show toast
@@ -55,7 +62,7 @@ public class BluetoothChatActivity extends AppCompatActivity {
         editText = findViewById(R.id.edit_text_message);
         arrayAdapter = new ArrayAdapter<>(this, 0);
         service = new BluetoothService(mHandler);
-        service.startConnectedThread(getSocket());
+        thread = service.startConnectedThread(getSocket());
     }
 
     private BluetoothSocket getSocket(){

@@ -29,7 +29,7 @@ public class BluetoothService {
         public final int MESSAGE_TOAST = 2;
     }
 
-    private class ConnectedThread extends Thread {
+    public class ConnectedThread extends Thread {
         private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
