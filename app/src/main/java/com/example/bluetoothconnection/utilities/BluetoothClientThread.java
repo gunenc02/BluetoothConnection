@@ -7,7 +7,6 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -48,18 +47,18 @@ public class BluetoothClientThread extends Thread {
     public void run() {
         // Cancel discovery because it otherwise slows down the connection.
         if(ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
-            ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
+            ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
+            ctx.checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED){
             checkPermissions();
-            return;
         }
         bluetoothAdapter.cancelDiscovery();
-
+        Boolean tmp = mmDevice.createBond();
         try {
             // Connect to the remote device through the socket. This call blocks
             // until it succeeds or throws an exception.
             mmSocket.connect();
         } catch (IOException connectException) {
-            Log.e(TAG, "Could not close the client socket", connectException);
+            Log.e(TAG, "Connection failed, trying to close the socket", connectException);
             try {
                 mmSocket.close();
             } catch (IOException closeException) {

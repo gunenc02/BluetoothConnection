@@ -1,6 +1,7 @@
 package com.example.bluetoothconnection.activities;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -38,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
     private final static String TAG = "MainActivity";
     BluetoothSocket socket;
 
+    private Boolean isPermissionsRequested = false;
+
 
 
     @Override
@@ -58,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         updateBluetoothStatus();
+        checkPermissions();
         btnScanDevices.setOnClickListener(v -> scanDevices());
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_FOUND);
@@ -121,11 +125,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addDeviceButton (BluetoothDevice device, boolean isPaired){
-        if(checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
-            return;
-        }
+
         Button deviceButton = new Button(this);
-        String deviceInfo = (isPaired ? "Paired: " : "Detected: ") + device.getName() + " - " + device.getAddress();
+        @SuppressLint("MissingPermission") String deviceInfo = (isPaired ? "Paired: " : "Detected: ") + device.getName() + " - " + device.getAddress();
         deviceButton.setText(deviceInfo);
 
         // Set click listener for each button
@@ -169,6 +171,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkPermissions(){
+
+        if(isPermissionsRequested){
+            return;
+        }
         String[] permissions = {
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.BLUETOOTH,
@@ -193,6 +199,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "Context is not an instance of Activity. Cannot request permissions.");
             }
         }
+        isPermissionsRequested = true;
     }
 
     @Override
