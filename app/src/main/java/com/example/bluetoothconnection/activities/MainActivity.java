@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.bluetoothconnection.R;
+import com.example.bluetoothconnection.listener.SocketListener;
 import com.example.bluetoothconnection.utilities.BluetoothClientThread;
 import com.example.bluetoothconnection.utilities.BluetoothServerThread;
 
@@ -28,7 +29,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SocketListener {
     private BluetoothAdapter bluetoothAdapter;
     private TextView tvStatus;
     private Button btnScanDevices;
@@ -38,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
     private final UUID MY_UUID= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private final static String TAG = "MainActivity";
     BluetoothSocket socket;
-
     private Boolean isPermissionsRequested = false;
 
 
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         registerReceiver(bluetoothReceiver, filter);
-        server = new BluetoothServerThread(this, bluetoothAdapter);
+        server = new BluetoothServerThread(this, bluetoothAdapter, this);
         server.start();
     }
 
@@ -146,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
             checkPermissions();
         }
 
-        BluetoothSocket tmp = null;
+        BluetoothSocket tmp;
         try {
             if(checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
                 checkPermissions();
@@ -157,17 +157,8 @@ public class MainActivity extends AppCompatActivity {
             tmp = null;
         }
         socket = tmp;
-        client = BluetoothClientThread.getClientThread(this, device, bluetoothAdapter, socket);
+        client = BluetoothClientThread.getClientThread(this, device, bluetoothAdapter, socket, this);
         client.start();
-
-        if (socket != null && socket.isConnected()){
-            Intent intent = new Intent(this, BluetoothChatActivity.class);
-            intent.putExtra("device_name", device.getName());
-            intent.putExtra("device_address", device.getAddress());
-            startActivity(intent);
-        } else {
-            Log.i(TAG, "Sth wrong");
-        }
     }
 
     private void checkPermissions(){
@@ -219,5 +210,15 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         client.cancel();
+    }
+
+    @SuppressLint("MissingPermission")
+    @Override
+    public void onSocketListener(BluetoothSocket socket) {
+        stopBluetoothClient();
+        Intent intent = new Intent(this, BluetoothChatActivity.class);
+        intent.putExtra("device_name", socket.getRemoteDevice().getName());
+        intent.putExtra("device_address", socket.getRemoteDevice().getAddress());
+        startActivity(intent);
     }
 }

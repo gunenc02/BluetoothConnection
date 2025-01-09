@@ -33,14 +33,16 @@
         android:layout_alignParentBottom="true">
 
         <!-- Message Input Field -->
+
+        <!-- Send Button -->
+
         <EditText
             android:id="@+id/edit_text_message"
-            android:layout_width="0dp"
+            android:layout_width="315dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="Type a message" />
 
-        <!-- Send Button -->
         <Button
             android:id="@+id/button_send"
             android:layout_width="wrap_content"

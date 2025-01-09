@@ -8,6 +8,8 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
+import com.example.bluetoothconnection.listener.SocketListener;
+
 import java.io.IOException;
 import java.util.UUID;
 
@@ -21,10 +23,11 @@ public class BluetoothClientThread extends Thread {
     private final static String TAG = "BluetoothClientThread";
     private final BluetoothAdapter bluetoothAdapter;
     private static BluetoothClientThread client;
+    private SocketListener listener;
 
-    public static BluetoothClientThread getClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, BluetoothSocket socket){
+    public static BluetoothClientThread getClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, BluetoothSocket socket, SocketListener listener){
         if(client == null){
-            client = new BluetoothClientThread(ctx, device, adapter, socket);
+            client = new BluetoothClientThread(ctx, device, adapter, socket, listener);
         }
         return client;
     }
@@ -36,11 +39,12 @@ public class BluetoothClientThread extends Thread {
     public static BluetoothSocket getSocket(){
         return mmSocket;
     }
-    public BluetoothClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, BluetoothSocket socket){
+    public BluetoothClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, BluetoothSocket socket, SocketListener listener){
         this.ctx = ctx;
         mmSocket = socket;
         mmDevice = device;
         this.bluetoothAdapter = adapter;
+        this.listener = listener;
 
     }
 
@@ -53,6 +57,7 @@ public class BluetoothClientThread extends Thread {
         }
         bluetoothAdapter.cancelDiscovery();
         Boolean tmp = mmDevice.createBond();
+        listener.onSocketListener(mmSocket);
         try {
             // Connect to the remote device through the socket. This call blocks
             // until it succeeds or throws an exception.
