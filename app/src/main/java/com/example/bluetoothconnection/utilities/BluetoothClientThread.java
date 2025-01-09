@@ -57,10 +57,10 @@ public class BluetoothClientThread extends Thread {
         }
         bluetoothAdapter.cancelDiscovery();
         Boolean tmp = mmDevice.createBond();
-        listener.onSocketListener(mmSocket);
         try {
             // Connect to the remote device through the socket. This call blocks
             // until it succeeds or throws an exception.
+            listener.onClientListener(mmSocket);
             mmSocket.connect();
         } catch (IOException connectException) {
             Log.e(TAG, "Connection failed, trying to close the socket", connectException);

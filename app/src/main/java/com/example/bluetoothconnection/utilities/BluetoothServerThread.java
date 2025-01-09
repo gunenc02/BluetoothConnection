@@ -76,7 +76,7 @@ public class BluetoothServerThread extends Thread {
                 Log.e(TAG, "Socket's accept() method failed", e);
                 break;
             }
-            listener.onSocketListener(socket);
+            listener.onServerListener(socket);
             if (socket != null) {
                 // Handle the connected socket
                 try {

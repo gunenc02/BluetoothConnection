@@ -2,6 +2,7 @@ package com.example.bluetoothconnection.activities;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -75,10 +76,10 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if(checkSelfPermission(android.Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
-                    checkSelfPermission(android.Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
-                    checkSelfPermission(android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
-                    checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+            if(checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
+                    checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
+                    checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
+                    checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
                     checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED){
                 checkPermissions();
             }
@@ -100,10 +101,10 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
     }
 
     private void scanDevices() {
-        if(checkSelfPermission(android.Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(android.Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+        if(checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
+                checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
+                checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
+                checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED){
             checkPermissions();
         }
@@ -138,10 +139,10 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
     }
 
     private void connectToDevice (BluetoothDevice device){
-        if(checkSelfPermission(android.Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(android.Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+        if(checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
+                checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
+                checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
+                checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED){
             checkPermissions();
         }
@@ -184,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
         }
 
         if (permissionNeeded) {
-            if (this instanceof android.app.Activity) {
+            if (this instanceof Activity) {
                 this.requestPermissions(permissions, 1);
             } else {
                 Log.e(TAG, "Context is not an instance of Activity. Cannot request permissions.");
@@ -202,6 +203,9 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
     }
 
     public void stopBluetoothServer() {
+        if(server == null){
+            return;
+        }
         server.cancel();
     }
 
@@ -214,7 +218,17 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
 
     @SuppressLint("MissingPermission")
     @Override
-    public void onSocketListener(BluetoothSocket socket) {
+    public void onClientListener(BluetoothSocket socket) {
+        stopBluetoothServer();
+        Intent intent = new Intent(this, BluetoothChatActivity.class);
+        intent.putExtra("device_name", socket.getRemoteDevice().getName());
+        intent.putExtra("device_address", socket.getRemoteDevice().getAddress());
+        startActivity(intent);
+    }
+
+    @SuppressLint("MissingPermission")
+    @Override
+    public void onServerListener(BluetoothSocket socket) {
         stopBluetoothClient();
         Intent intent = new Intent(this, BluetoothChatActivity.class);
         intent.putExtra("device_name", socket.getRemoteDevice().getName());
