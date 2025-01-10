@@ -264,6 +264,7 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
         thread.cancel();
     }
 
+    /*
     @Override
     public void showConnectionRequest(BluetoothServerThread thread, BluetoothSocket socket){
         @SuppressLint("MissingPermission") String name = socket.getRemoteDevice().getName();
@@ -291,4 +292,5 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
         AlertDialog dialog = builder.create();
         dialog.show();
     }
+    */
 }
