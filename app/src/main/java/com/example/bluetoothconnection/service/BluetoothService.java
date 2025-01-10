@@ -72,7 +72,7 @@ public class BluetoothService {
                             mmBuffer);
                     readMsg.sendToTarget();
                 } catch (IOException e) {
-                    Log.d(TAG, "Input stream was disconnected", e);
+                    Log.d(TAG, "Input stream was disconnected");
                     break;
                 }
             }
@@ -86,7 +86,7 @@ public class BluetoothService {
 
                 // Share the sent message with the UI activity.
                 Message writtenMsg = handler.obtainMessage(
-                        MessageConstants.MESSAGE_WRITE, -1, -1, mmBuffer);
+                        MessageConstants.MESSAGE_WRITE, bytes.length, -1, bytes);
                 writtenMsg.sendToTarget();
             } catch (IOException e) {
                 Log.e(TAG, "Error occurred when sending data", e);

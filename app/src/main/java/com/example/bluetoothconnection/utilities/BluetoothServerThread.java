@@ -120,8 +120,10 @@ public class BluetoothServerThread extends Thread {
     public void cancel() {
         try {
             mmServerSocket.close();
-        } catch (IOException e) {
+            this.join();
+        } catch (Exception e) {
             Log.e(TAG, "Could not close the connect socket", e);
         }
+
     }
 }

@@ -56,17 +56,18 @@ public class BluetoothClientThread extends Thread {
             checkPermissions();
         }
         bluetoothAdapter.cancelDiscovery();
-        Boolean tmp = mmDevice.createBond();
+        mmDevice.createBond();
         try {
             // Connect to the remote device through the socket. This call blocks
             // until it succeeds or throws an exception.
-            listener.onClientListener(mmSocket);
             mmSocket.connect();
+            listener.onClientListener(mmSocket);
         } catch (IOException connectException) {
             Log.e(TAG, "Connection failed, trying to close the socket", connectException);
             try {
                 mmSocket.close();
-            } catch (IOException closeException) {
+                listener.onFailClientListener(this);
+            } catch (Exception closeException) {
                 Log.e(TAG, "Could not close the client socket", closeException);
             }
         }
@@ -75,9 +76,12 @@ public class BluetoothClientThread extends Thread {
     public void cancel() {
         try {
             mmSocket.close();
-        } catch (IOException e) {
+            client = null;
+            this.join();
+        } catch (Exception e) {
             Log.e(TAG, "Could not close the client socket", e);
         }
+
     }
 
     private void checkPermissions(){

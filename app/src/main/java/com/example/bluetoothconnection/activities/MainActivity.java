@@ -3,6 +3,7 @@ package com.example.bluetoothconnection.activities;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -68,10 +69,30 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         registerReceiver(bluetoothReceiver, filter);
-        server = new BluetoothServerThread(this, bluetoothAdapter, this);
-        server.start();
+        Log.i(TAG, "in create");
+        startBluetoothServerThread();
     }
 
+    @Override
+    public void onRestart(){
+
+        Log.i(TAG, "in restart");
+        super.onRestart();
+        if(client != null){
+            client.cancel();
+            client = null;
+        }
+        if(server != null){
+            server.cancel();
+            server = null;
+        }
+        startBluetoothServerThread();
+    }
+
+    private void startBluetoothServerThread(){
+        server = BluetoothServerThread.getBluetoothServerThread(this, bluetoothAdapter, this);
+        server.start();
+    }
     private final BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -207,6 +228,7 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
             return;
         }
         server.cancel();
+        server = null;
     }
 
     public void stopBluetoothClient(){
@@ -214,6 +236,7 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
             return;
         }
         client.cancel();
+        client = null;
     }
 
     @SuppressLint("MissingPermission")
@@ -234,5 +257,38 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
         intent.putExtra("device_name", socket.getRemoteDevice().getName());
         intent.putExtra("device_address", socket.getRemoteDevice().getAddress());
         startActivity(intent);
+    }
+
+    @Override
+    public void onFailClientListener(BluetoothClientThread thread) {
+        thread.cancel();
+    }
+
+    @Override
+    public void showConnectionRequest(BluetoothServerThread thread, BluetoothSocket socket){
+        @SuppressLint("MissingPermission") String name = socket.getRemoteDevice().getName();
+        String address = socket.getRemoteDevice().getAddress();
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Connection Request");
+        builder.setMessage("Device: " + name + "\nAddress: " + address + "\nAccept the connection?");
+
+        builder.setPositiveButton("Yes", (dialog, which) -> {
+            dialog.dismiss();
+            thread.showConnectionRequest(true); // Proceed with the connection
+        });
+
+        builder.setNegativeButton("No", (dialog, which) -> {
+            dialog.dismiss();
+            try {
+                socket.close(); // Refuse the connection
+                thread.showConnectionRequest(false);
+            } catch (IOException e) {
+                Log.e("MainActivity", "Error closing socket", e);
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 }
