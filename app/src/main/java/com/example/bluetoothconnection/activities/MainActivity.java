@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -20,6 +21,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.bluetoothconnection.R;
@@ -69,14 +71,13 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         registerReceiver(bluetoothReceiver, filter);
-        Log.i(TAG, "in create");
         startBluetoothServerThread();
+        makeVisible();
     }
 
     @Override
     public void onRestart(){
 
-        Log.i(TAG, "in restart");
         super.onRestart();
         if(client != null){
             client.cancel();
@@ -101,7 +102,8 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
                     checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
                     checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
                     checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
-                    checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED){
+                    checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
+                    checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED){
                 checkPermissions();
             }
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
@@ -126,7 +128,8 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
                 checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED){
+                checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
+                checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED){
             checkPermissions();
         }
 
@@ -134,7 +137,7 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
 
 
         Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-        Log.i("Entered", "Here");
+        bluetoothAdapter.startDiscovery();
         if(pairedDevices.size() > 0){
             if (pairedDevices != null && pairedDevices.size() > 0) {
                 for (BluetoothDevice device : pairedDevices) {
@@ -143,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
             }
         }
 
-        bluetoothAdapter.startDiscovery();
+
     }
 
     private void addDeviceButton (BluetoothDevice device, boolean isPaired){
@@ -164,7 +167,8 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
                 checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
                 checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED){
+                checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
+                checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED){
             checkPermissions();
         }
 
@@ -183,6 +187,7 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
         client.start();
     }
 
+
     private void checkPermissions(){
 
         if(isPermissionsRequested){
@@ -193,7 +198,8 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
                 Manifest.permission.BLUETOOTH,
                 Manifest.permission.BLUETOOTH_ADMIN,
                 Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_SCAN
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_ADVERTISE
         };
 
         boolean permissionNeeded = false;
@@ -264,33 +270,13 @@ public class MainActivity extends AppCompatActivity implements SocketListener {
         thread.cancel();
     }
 
-    /*
-    @Override
-    public void showConnectionRequest(BluetoothServerThread thread, BluetoothSocket socket){
-        @SuppressLint("MissingPermission") String name = socket.getRemoteDevice().getName();
-        String address = socket.getRemoteDevice().getAddress();
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Connection Request");
-        builder.setMessage("Device: " + name + "\nAddress: " + address + "\nAccept the connection?");
-
-        builder.setPositiveButton("Yes", (dialog, which) -> {
-            dialog.dismiss();
-            thread.showConnectionRequest(true); // Proceed with the connection
-        });
-
-        builder.setNegativeButton("No", (dialog, which) -> {
-            dialog.dismiss();
-            try {
-                socket.close(); // Refuse the connection
-                thread.showConnectionRequest(false);
-            } catch (IOException e) {
-                Log.e("MainActivity", "Error closing socket", e);
-            }
-        });
-
-        AlertDialog dialog = builder.create();
-        dialog.show();
+    private void makeVisible(){
+        if(checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED){
+            checkPermissions();
+        }
+        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300); // 5 minutes
+        startActivity(discoverableIntent);
     }
-    */
+
 }

@@ -9,5 +9,4 @@ public interface SocketListener {
     void onServerListener(BluetoothSocket socket);
     void onClientListener(BluetoothSocket socket);
     void onFailClientListener(BluetoothClientThread thread);
-    //void showConnectionRequest(BluetoothServerThread thread, BluetoothSocket socket);
 }

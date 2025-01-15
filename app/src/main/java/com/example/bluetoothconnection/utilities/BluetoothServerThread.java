@@ -1,15 +1,14 @@
 package com.example.bluetoothconnection.utilities;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.location.GnssAntennaInfo;
-import android.os.Build;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.example.bluetoothconnection.activities.MainActivity;
 import com.example.bluetoothconnection.listener.SocketListener;
@@ -44,6 +43,7 @@ public class BluetoothServerThread extends Thread {
     public static BluetoothSocket getSocket() {
         return socket;
     }
+    @SuppressLint("MissingPermission")
     public BluetoothServerThread(Context ctx, BluetoothAdapter adapter, SocketListener listener) {
         // Use a temporary object that is later assigned to mmServerSocket
         // because mmServerSocket is final.
@@ -72,6 +72,7 @@ public class BluetoothServerThread extends Thread {
         while (true) {
             try {
                 socket = mmServerSocket.accept();
+                answerConnectionRequest(socket);
             } catch (IOException e) {
                 Log.e(TAG, "Socket's accept() method failed", e);
                 break;
@@ -125,5 +126,28 @@ public class BluetoothServerThread extends Thread {
             Log.e(TAG, "Could not close the connect socket", e);
         }
 
+    }
+
+    public void answerConnectionRequest(BluetoothSocket socket){
+        ((MainActivity) ctx).runOnUiThread(() -> {
+            @SuppressLint("MissingPermission") String name = socket.getRemoteDevice().getName();
+            String address = socket.getRemoteDevice().getAddress();
+            AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+            builder.setTitle("Connection Request");
+            builder.setMessage("Device: " + name + "\nAddress: " + address + "\nAccept the connection?");
+            builder.setPositiveButton("Yes", (dialog, which) -> {
+                dialog.dismiss();
+            });
+            builder.setNegativeButton("No", (dialog, which) -> {
+                dialog.dismiss();
+                try {
+                    socket.close(); // Refuse the connection
+                } catch (IOException e) {
+                    Log.e("MainActivity", "Error closing socket", e);
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+        });
     }
 }

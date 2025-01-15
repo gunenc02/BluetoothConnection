@@ -45,7 +45,6 @@ public class BluetoothClientThread extends Thread {
         mmDevice = device;
         this.bluetoothAdapter = adapter;
         this.listener = listener;
-
     }
 
     public void run() {
@@ -56,7 +55,7 @@ public class BluetoothClientThread extends Thread {
             checkPermissions();
         }
         bluetoothAdapter.cancelDiscovery();
-        mmDevice.createBond();
+        //mmDevice.createBond();
         try {
             // Connect to the remote device through the socket. This call blocks
             // until it succeeds or throws an exception.
@@ -90,7 +89,8 @@ public class BluetoothClientThread extends Thread {
                 Manifest.permission.BLUETOOTH,
                 Manifest.permission.BLUETOOTH_ADMIN,
                 Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_SCAN
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_ADVERTISE
         };
 
         boolean permissionNeeded = false;
