@@ -8,7 +8,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
-import com.example.bluetoothconnection.listener.SocketListener;
+import com.example.bluetoothconnection.listener.SocketStateListener;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -23,9 +23,9 @@ public class BluetoothClientThread extends Thread {
     private final static String TAG = "BluetoothClientThread";
     private final BluetoothAdapter bluetoothAdapter;
     private static BluetoothClientThread client;
-    private SocketListener listener;
+    private SocketStateListener listener;
 
-    public static BluetoothClientThread getClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, BluetoothSocket socket, SocketListener listener){
+    public static BluetoothClientThread getClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, BluetoothSocket socket, SocketStateListener listener){
         if(client == null){
             client = new BluetoothClientThread(ctx, device, adapter, socket, listener);
         }
@@ -39,7 +39,7 @@ public class BluetoothClientThread extends Thread {
     public static BluetoothSocket getSocket(){
         return mmSocket;
     }
-    public BluetoothClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, BluetoothSocket socket, SocketListener listener){
+    public BluetoothClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, BluetoothSocket socket, SocketStateListener listener){
         this.ctx = ctx;
         mmSocket = socket;
         mmDevice = device;

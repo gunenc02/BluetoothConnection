@@ -3,7 +3,6 @@ package com.example.bluetoothconnection.activities;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -12,7 +11,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -21,11 +19,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.bluetoothconnection.R;
-import com.example.bluetoothconnection.listener.SocketListener;
+import com.example.bluetoothconnection.listener.SocketStateListener;
 import com.example.bluetoothconnection.utilities.BluetoothClientThread;
 import com.example.bluetoothconnection.utilities.BluetoothServerThread;
 
@@ -33,7 +30,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity implements SocketListener {
+public class MainActivity extends AppCompatActivity implements SocketStateListener {
     private BluetoothAdapter bluetoothAdapter;
     private TextView tvStatus;
     private Button btnScanDevices;

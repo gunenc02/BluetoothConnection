@@ -11,7 +11,7 @@ import android.content.pm.PackageManager;
 import android.util.Log;
 
 import com.example.bluetoothconnection.activities.MainActivity;
-import com.example.bluetoothconnection.listener.SocketListener;
+import com.example.bluetoothconnection.listener.SocketStateListener;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -27,9 +27,9 @@ public class BluetoothServerThread extends Thread {
     private final static String TAG = "Error in BluetoothServerThread";
     private static BluetoothSocket socket;
     private static BluetoothServerThread server = null;
-    private SocketListener listener;
+    private SocketStateListener listener;
 
-    public static BluetoothServerThread getBluetoothServerThread(Context ctx, BluetoothAdapter adapter, SocketListener listener){
+    public static BluetoothServerThread getBluetoothServerThread(Context ctx, BluetoothAdapter adapter, SocketStateListener listener){
         if(server == null){
             return new BluetoothServerThread(ctx, adapter, listener);
         }
@@ -44,7 +44,7 @@ public class BluetoothServerThread extends Thread {
         return socket;
     }
     @SuppressLint("MissingPermission")
-    public BluetoothServerThread(Context ctx, BluetoothAdapter adapter, SocketListener listener) {
+    public BluetoothServerThread(Context ctx, BluetoothAdapter adapter, SocketStateListener listener) {
         // Use a temporary object that is later assigned to mmServerSocket
         // because mmServerSocket is final.
         this.bluetoothAdapter = adapter;

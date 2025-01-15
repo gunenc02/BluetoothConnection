@@ -6,6 +6,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import com.example.bluetoothconnection.listener.SocketClosingListener;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -18,8 +20,8 @@ public class BluetoothService {
         this.handler = handler;
     }
 
-    public ConnectedThread startConnectedThread(BluetoothSocket socket){
-        ConnectedThread thread = new ConnectedThread(socket);
+    public ConnectedThread startConnectedThread(BluetoothSocket socket, SocketClosingListener listener){
+        ConnectedThread thread = new ConnectedThread(socket, listener);
         thread.start();
         return thread; // Need to be handled
     }
@@ -33,10 +35,12 @@ public class BluetoothService {
         private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
+        private SocketClosingListener listener;
         private byte[] mmBuffer; // mmBuffer store for the stream
 
-        public ConnectedThread(BluetoothSocket socket) {
+        public ConnectedThread(BluetoothSocket socket, SocketClosingListener listener) {
             mmSocket = socket;
+            this.listener = listener;
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
 
@@ -73,6 +77,7 @@ public class BluetoothService {
                     readMsg.sendToTarget();
                 } catch (IOException e) {
                     Log.d(TAG, "Input stream was disconnected");
+                    listener.onSocketCloseListener();
                     break;
                 }
             }
@@ -99,6 +104,7 @@ public class BluetoothService {
                         "Couldn't send data to the other device");
                 writeErrorMsg.setData(bundle);
                 handler.sendMessage(writeErrorMsg);
+                listener.onSocketCloseListener();
             }
         }
 

@@ -18,11 +18,12 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.bluetoothconnection.R;
+import com.example.bluetoothconnection.listener.SocketClosingListener;
 import com.example.bluetoothconnection.service.BluetoothService;
 import com.example.bluetoothconnection.utilities.BluetoothClientThread;
 import com.example.bluetoothconnection.utilities.BluetoothServerThread;
 
-public class BluetoothChatActivity extends AppCompatActivity {
+public class BluetoothChatActivity extends AppCompatActivity implements SocketClosingListener {
 
     private ArrayAdapter<String> adapter;
     private Button sendButton, backButton;
@@ -70,7 +71,7 @@ public class BluetoothChatActivity extends AppCompatActivity {
         arrayAdapter = new ArrayAdapter<>(this, 0);
         service = new BluetoothService(mHandler);
         socket = getSocket();
-        thread = service.startConnectedThread(socket);
+        thread = service.startConnectedThread(socket, this);
         sendButton.setOnClickListener(v -> sendMessage());
         backButton.setOnClickListener(v -> back());
     }
@@ -96,4 +97,8 @@ public class BluetoothChatActivity extends AppCompatActivity {
        }
     }
 
+    @Override
+    public void onSocketCloseListener() {
+        back();
+    }
 }
