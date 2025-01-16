@@ -8,6 +8,7 @@ import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.util.Log;
 
 import com.example.bluetoothconnection.activities.MainActivity;
@@ -20,38 +21,37 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
 public class BluetoothServerThread extends Thread {
-    private final CountDownLatch permissionLatch = new CountDownLatch(1);
     private BluetoothServerSocket mmServerSocket;
-    private Context ctx;
+    private final Context ctx;
     private final String NAME = "DEVICE";
     private final UUID MY_UUID= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private final BluetoothAdapter bluetoothAdapter;
     private final static String TAG = "Error in BluetoothServerThread";
     private static BluetoothSocket socket;
     private static BluetoothServerThread server = null;
-    private SocketStateListener listener;
 
-    public static BluetoothServerThread getBluetoothServerThread(Context ctx, BluetoothAdapter adapter, SocketStateListener listener){
+    public static BluetoothServerThread getBluetoothServerThread(Context ctx, BluetoothAdapter adapter){
         if(server == null){
-            return new BluetoothServerThread(ctx, adapter, listener);
+            server = new BluetoothServerThread(ctx, adapter);
         }
         return server;
     }
-
+/*
     public static Boolean isExists(){
+        // isExists version of the BluetoothClientThread is used so this becomes unnecessary
         return server != null;
     }
+ */
 
     public static BluetoothSocket getSocket() {
         return socket;
     }
     @SuppressLint("MissingPermission")
-    public BluetoothServerThread(Context ctx, BluetoothAdapter adapter, SocketStateListener listener) {
+    public BluetoothServerThread(Context ctx, BluetoothAdapter adapter) {
         // Use a temporary object that is later assigned to mmServerSocket
         // because mmServerSocket is final.
         this.bluetoothAdapter = adapter;
         this.ctx = ctx;
-        this.listener = listener;
     }
 
     public void run() {
@@ -83,13 +83,25 @@ public class BluetoothServerThread extends Thread {
     }
 
     private void checkPermissions(){
-        String[] permissions = {
+        String[] generalPermissions = {
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.BLUETOOTH,
                 Manifest.permission.BLUETOOTH_ADMIN,
                 Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_SCAN
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_ADVERTISE
+
         };
+
+        String [] permissions;
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+            permissions = new String[6];
+            System.arraycopy(generalPermissions, 0, permissions, 0, 6);
+        } else {
+            permissions = new String[3];
+            System.arraycopy(generalPermissions, 0, permissions, 0, 3);
+        }
 
         boolean permissionNeeded = false;
 
@@ -113,6 +125,10 @@ public class BluetoothServerThread extends Thread {
     public void cancel() {
         try {
             mmServerSocket.close();
+            if(socket.isConnected()){
+                socket.close();
+            }
+            server = null;
             this.join();
         } catch (Exception e) {
             Log.e(TAG, "Could not close the connect socket", e);
@@ -132,7 +148,7 @@ public class BluetoothServerThread extends Thread {
                 try {
                     OutputStream stream = socket.getOutputStream();
                     stream.write(1);
-                    listener.onServerListener();
+                    ((MainActivity)ctx).onServerListener();
                     try {
                         mmServerSocket.close();
                     } catch (Exception ex) {

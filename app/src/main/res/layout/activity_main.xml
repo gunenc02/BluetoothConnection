@@ -5,15 +5,6 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Bluetooth Status Text -->
-    <TextView
-        android:id="@+id/tv_status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Bluetooth Status: Unknown"
-        android:textSize="18sp"
-        android:layout_marginBottom="16dp" />
-
     <!-- Start Scanning Button -->
     <Button
         android:id="@+id/btn_scan_devices"

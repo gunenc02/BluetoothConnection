@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -28,9 +29,9 @@ public class BluetoothClientThread extends Thread {
     private static BluetoothClientThread client;
     private SocketStateListener listener;
 
-    public static BluetoothClientThread getClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, SocketStateListener listener){
+    public static BluetoothClientThread getClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter){
         if(client == null){
-            client = new BluetoothClientThread(ctx, device, adapter, listener);
+            client = new BluetoothClientThread(ctx, device, adapter);
         }
         return client;
     }
@@ -42,11 +43,10 @@ public class BluetoothClientThread extends Thread {
     public static BluetoothSocket getSocket(){
         return mmSocket;
     }
-    public BluetoothClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, SocketStateListener listener){
+    public BluetoothClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter){
         this.ctx = ctx;
         mmDevice = device;
         this.bluetoothAdapter = adapter;
-        this.listener = listener;
     }
 
     public void run() {
@@ -58,7 +58,6 @@ public class BluetoothClientThread extends Thread {
                 ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED){
             checkPermissions();
         }
-
         BluetoothSocket tmp;
         try {
             tmp = mmDevice.createRfcommSocketToServiceRecord(MY_UUID);
@@ -81,22 +80,24 @@ public class BluetoothClientThread extends Thread {
             InputStream stream = mmSocket.getInputStream();
             int result = stream.read(); // think as if they are boolean, 1 for true, 0 for false
             if(result == 1){
-                listener.onClientListener();
+                ((MainActivity)ctx).onClientListener();
             } else {
                 ((MainActivity)ctx).runOnUiThread(() -> {
                     Toast.makeText(ctx, "Connection rejected", Toast.LENGTH_SHORT).show();
                 });
-                listener.onFailClientListener(this);
+                ((MainActivity)ctx).onFailClientListener(this);
             }
         } catch (IOException e) {
-            listener.onFailClientListener(this);
+            ((MainActivity)ctx).onFailClientListener(this);
             throw new RuntimeException(e);
         }
     }
     // Closes the client socket and causes the thread to finish.
     public void cancel() {
         try {
-            mmSocket.close();
+            if(mmSocket.isConnected()){
+                mmSocket.close();
+            }
             client = null;
             this.join();
         } catch (Exception e) {
@@ -106,7 +107,7 @@ public class BluetoothClientThread extends Thread {
     }
 
     private void checkPermissions(){
-        String[] permissions = {
+        String[] generalPermissions = {
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.BLUETOOTH,
                 Manifest.permission.BLUETOOTH_ADMIN,
@@ -114,6 +115,16 @@ public class BluetoothClientThread extends Thread {
                 Manifest.permission.BLUETOOTH_SCAN,
                 Manifest.permission.BLUETOOTH_ADVERTISE
         };
+
+        String [] permissions;
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+            permissions = new String[6];
+            System.arraycopy(generalPermissions, 0, permissions, 0, 6);
+        } else {
+            permissions = new String[3];
+            System.arraycopy(generalPermissions, 0, permissions, 0, 3);
+        }
 
         boolean permissionNeeded = false;
 

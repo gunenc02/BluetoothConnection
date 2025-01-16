@@ -90,7 +90,6 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
     private void back(){
        try{
            socket.close();
-           finish();
        } catch (Exception e) {
            Log.e("BluetoothChatActivity", "cannot close the socket");
        }
@@ -98,7 +97,9 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
 
     @Override
     public void onSocketCloseListener() {
-        Toast.makeText(this, "Connection closed", Toast.LENGTH_SHORT).show();
-        back();
+        this.runOnUiThread(() -> {
+            Toast.makeText(this, "Connection closed", Toast.LENGTH_SHORT).show();
+        });
+        finish();
     }
 }

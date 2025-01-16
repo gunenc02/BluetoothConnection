@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
@@ -20,6 +21,7 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.example.bluetoothconnection.R;
 import com.example.bluetoothconnection.listener.SocketStateListener;
@@ -29,68 +31,82 @@ import com.example.bluetoothconnection.utilities.BluetoothServerThread;
 import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 
 public class MainActivity extends AppCompatActivity implements SocketStateListener {
     private BluetoothAdapter bluetoothAdapter;
-    private TextView tvStatus;
     private Button btnScanDevices;
     private LinearLayout deviceContainer;
     BluetoothServerThread server;
     BluetoothClientThread client; // if it is null, should not activate stop function
-    private final UUID MY_UUID= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private final static String TAG = "MainActivity";
-    BluetoothSocket socket;
     private Boolean isPermissionsRequested = false;
 
-
+    private CountDownLatch latch;
+    Intent discoverableIntent;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        tvStatus = findViewById(R.id.tv_status);
         btnScanDevices = findViewById(R.id.btn_scan_devices);
         deviceContainer = findViewById(R.id.device_container);
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         client = null;
+
+        latch = new CountDownLatch(1);
         if (bluetoothAdapter == null) {
-            tvStatus.setText("No Bluetooth Support");
             btnScanDevices.setEnabled(false);
             onDestroy();
             return;
         }
-        updateBluetoothStatus();
+
         checkPermissions();
         btnScanDevices.setOnClickListener(v -> scanDevices());
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         registerReceiver(bluetoothReceiver, filter);
-        startBluetoothServerThread();
-        makeVisible();
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+                bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            makeVisible();
+        }
+
+        if(server == null){
+            startBluetoothServerThread();
+        }
     }
 
     @Override
     public void onRestart(){
-
         super.onRestart();
         if(client != null){
             client.cancel();
             client = null;
         }
+
         if(server != null){
             server.cancel();
             server = null;
         }
+
         startBluetoothServerThread();
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+                bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            makeVisible();
+        }
     }
 
-    private void startBluetoothServerThread(){
-        server = BluetoothServerThread.getBluetoothServerThread(this, bluetoothAdapter, this);
-        server.start();
-    }
     private final BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -111,14 +127,6 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
             }
         }
     };
-
-    private void updateBluetoothStatus() {
-        if (bluetoothAdapter.isEnabled()) {
-            tvStatus.setText("Bluetooth enabled");
-        } else {
-            tvStatus.setText("Bluetooth disabled");
-        }
-    }
 
     private void scanDevices() {
         if(checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
@@ -153,15 +161,26 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
     }
 
     private void connectToDevice (BluetoothDevice device){
-        client = BluetoothClientThread.getClientThread(this, device, bluetoothAdapter, this);
-        client.start();
+        client = BluetoothClientThread.getClientThread(this, device, bluetoothAdapter);
+        if(client.getState() == Thread.State.NEW){
+            client.start();
+        }
+    }
+
+    private void startBluetoothServerThread(){
+        server = BluetoothServerThread.getBluetoothServerThread(this, bluetoothAdapter);
+        if(server.getState() == Thread.State.NEW){
+            server.start();
+        }
+        logServerState(server);
     }
 
     private void checkPermissions(){
         if(isPermissionsRequested){
             return;
         }
-        String[] permissions = {
+
+        String[] generalPermissions = {
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.BLUETOOTH,
                 Manifest.permission.BLUETOOTH_ADMIN,
@@ -169,6 +188,15 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
                 Manifest.permission.BLUETOOTH_SCAN,
                 Manifest.permission.BLUETOOTH_ADVERTISE
         };
+        String [] permissions;
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S){
+            permissions = new String[6];
+            System.arraycopy(generalPermissions, 0, permissions, 0, 6);
+        } else {
+            permissions = new String[3];
+            System.arraycopy(generalPermissions, 0, permissions, 0, 3);
+        }
 
         boolean permissionNeeded = false;
 
@@ -180,13 +208,10 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
         }
 
         if (permissionNeeded) {
-            if (this instanceof Activity) {
-                this.requestPermissions(permissions, 1);
-            } else {
-                Log.e(TAG, "Context is not an instance of Activity. Cannot request permissions.");
-            }
+            this.requestPermissions(permissions, 1);
         }
         isPermissionsRequested = true;
+        latch.countDown();
     }
 
     @Override
@@ -240,9 +265,12 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
         if(checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED){
             checkPermissions();
         }
-        Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
         startActivity(discoverableIntent);
     }
 
+    private void logServerState(BluetoothServerThread thread){
+        Log.i(TAG, thread.getState().toString());
+    }
 }
