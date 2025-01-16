@@ -132,18 +132,13 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
 
         deviceContainer.removeAllViews();
 
-
         Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
         bluetoothAdapter.startDiscovery();
-        if(pairedDevices.size() > 0){
-            if (pairedDevices != null && pairedDevices.size() > 0) {
-                for (BluetoothDevice device : pairedDevices) {
-                    addDeviceButton(device, true);  // Add paired devices as buttons
-                }
+        if(!pairedDevices.isEmpty()){
+            for (BluetoothDevice device : pairedDevices) {
+                addDeviceButton(device, true);
             }
         }
-
-
     }
 
     private void addDeviceButton (BluetoothDevice device, boolean isPaired){
@@ -152,41 +147,17 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
         @SuppressLint("MissingPermission") String deviceInfo = (isPaired ? "Paired: " : "Detected: ") + device.getName() + " - " + device.getAddress();
         deviceButton.setText(deviceInfo);
 
-        // Set click listener for each button
         deviceButton.setOnClickListener(v -> connectToDevice(device));
 
-        // Add button to the layout
         deviceContainer.addView(deviceButton);
     }
 
     private void connectToDevice (BluetoothDevice device){
-        if(checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED){
-            checkPermissions();
-        }
-
-        BluetoothSocket tmp;
-        try {
-            if(checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
-                checkPermissions();
-            }
-            tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
-        } catch (IOException e) {
-            Log.e(TAG, "Socket's create() method failed", e);
-            tmp = null;
-        }
-        socket = tmp;
-        client = BluetoothClientThread.getClientThread(this, device, bluetoothAdapter, socket, this);
+        client = BluetoothClientThread.getClientThread(this, device, bluetoothAdapter, this);
         client.start();
     }
 
-
     private void checkPermissions(){
-
         if(isPermissionsRequested){
             return;
         }
@@ -244,27 +215,25 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
 
     @SuppressLint("MissingPermission")
     @Override
-    public void onClientListener(BluetoothSocket socket) {
+    public void onClientListener() {
         stopBluetoothServer();
         Intent intent = new Intent(this, BluetoothChatActivity.class);
-        intent.putExtra("device_name", socket.getRemoteDevice().getName());
-        intent.putExtra("device_address", socket.getRemoteDevice().getAddress());
         startActivity(intent);
     }
 
     @SuppressLint("MissingPermission")
     @Override
-    public void onServerListener(BluetoothSocket socket) {
+    public void onServerListener() {
         stopBluetoothClient();
         Intent intent = new Intent(this, BluetoothChatActivity.class);
-        intent.putExtra("device_name", socket.getRemoteDevice().getName());
-        intent.putExtra("device_address", socket.getRemoteDevice().getAddress());
         startActivity(intent);
     }
 
     @Override
     public void onFailClientListener(BluetoothClientThread thread) {
         thread.cancel();
+        client = null;
+        onRestart();
     }
 
     private void makeVisible(){
@@ -272,7 +241,7 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
             checkPermissions();
         }
         Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300); // 5 minutes
+        discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
         startActivity(discoverableIntent);
     }
 

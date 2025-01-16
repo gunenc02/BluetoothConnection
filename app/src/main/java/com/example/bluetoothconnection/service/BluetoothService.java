@@ -26,20 +26,18 @@ public class BluetoothService {
         return thread; // Need to be handled
     }
     private interface MessageConstants {
-        public final int MESSAGE_READ = 0;
-        public final int MESSAGE_WRITE = 1;
-        public final int MESSAGE_TOAST = 2;
+        int MESSAGE_READ = 0;
+        int MESSAGE_WRITE = 1;
+        int MESSAGE_TOAST = 2;
     }
 
     public class ConnectedThread extends Thread {
-        private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
         private SocketClosingListener listener;
         private byte[] mmBuffer; // mmBuffer store for the stream
 
         public ConnectedThread(BluetoothSocket socket, SocketClosingListener listener) {
-            mmSocket = socket;
             this.listener = listener;
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
@@ -50,11 +48,13 @@ public class BluetoothService {
                 tmpIn = socket.getInputStream();
             } catch (IOException e) {
                 Log.e(TAG, "Error occurred when creating input stream", e);
+                cancel();
             }
             try {
                 tmpOut = socket.getOutputStream();
             } catch (IOException e) {
                 Log.e(TAG, "Error occurred when creating output stream", e);
+                cancel();
             }
 
             mmInStream = tmpIn;
@@ -77,7 +77,7 @@ public class BluetoothService {
                     readMsg.sendToTarget();
                 } catch (IOException e) {
                     Log.d(TAG, "Input stream was disconnected");
-                    listener.onSocketCloseListener();
+                    cancel();
                     break;
                 }
             }
@@ -104,17 +104,13 @@ public class BluetoothService {
                         "Couldn't send data to the other device");
                 writeErrorMsg.setData(bundle);
                 handler.sendMessage(writeErrorMsg);
-                listener.onSocketCloseListener();
+                cancel();
             }
         }
 
         // Call this method from the main activity to shut down the connection.
         public void cancel() {
-            try {
-                mmSocket.close();
-            } catch (IOException e) {
-                Log.e(TAG, "Could not close the connect socket", e);
-            }
+            listener.onSocketCloseListener();
         }
     }
 }

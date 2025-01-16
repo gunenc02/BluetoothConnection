@@ -14,6 +14,8 @@ import com.example.bluetoothconnection.activities.MainActivity;
 import com.example.bluetoothconnection.listener.SocketStateListener;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
@@ -77,16 +79,6 @@ public class BluetoothServerThread extends Thread {
                 Log.e(TAG, "Socket's accept() method failed", e);
                 break;
             }
-            listener.onServerListener(socket);
-            if (socket != null) {
-                // Handle the connected socket
-                try {
-                    mmServerSocket.close();
-                    break;
-                } catch (Exception ex) {
-                    Log.e(TAG, "Error managing connected socket", ex);
-                }
-            }
         }
     }
 
@@ -137,11 +129,25 @@ public class BluetoothServerThread extends Thread {
             builder.setMessage("Device: " + name + "\nAddress: " + address + "\nAccept the connection?");
             builder.setPositiveButton("Yes", (dialog, which) -> {
                 dialog.dismiss();
+                try {
+                    OutputStream stream = socket.getOutputStream();
+                    stream.write(1);
+                    listener.onServerListener();
+                    try {
+                        mmServerSocket.close();
+                    } catch (Exception ex) {
+                        Log.e(TAG, "Error managing connected socket", ex);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             });
             builder.setNegativeButton("No", (dialog, which) -> {
                 dialog.dismiss();
                 try {
-                    socket.close(); // Refuse the connection
+                    OutputStream stream = socket.getOutputStream();
+                    stream.write(0);
+                    socket.close();
                 } catch (IOException e) {
                     Log.e("MainActivity", "Error closing socket", e);
                 }

@@ -12,6 +12,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -29,7 +30,6 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
     private Button sendButton, backButton;
     private ListView listView;
     private EditText editText;
-    private ArrayAdapter<ListView> arrayAdapter;
     private BluetoothService service;
     private BluetoothSocket socket;
     public static final String TAG = "BluetoothChatActivity";
@@ -68,7 +68,6 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
         sendButton = findViewById(R.id.button_send);
         backButton = findViewById(R.id.button_back);
         editText = findViewById(R.id.edit_text_message);
-        arrayAdapter = new ArrayAdapter<>(this, 0);
         service = new BluetoothService(mHandler);
         socket = getSocket();
         thread = service.startConnectedThread(socket, this);
@@ -99,6 +98,7 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
 
     @Override
     public void onSocketCloseListener() {
+        Toast.makeText(this, "Connection closed", Toast.LENGTH_SHORT).show();
         back();
     }
 }

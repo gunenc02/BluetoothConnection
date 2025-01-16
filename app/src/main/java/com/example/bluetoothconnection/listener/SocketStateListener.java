@@ -5,7 +5,7 @@ import android.bluetooth.BluetoothSocket;
 import com.example.bluetoothconnection.utilities.BluetoothClientThread;
 
 public interface SocketStateListener {
-    void onServerListener(BluetoothSocket socket);
-    void onClientListener(BluetoothSocket socket);
+    void onServerListener();
+    void onClientListener();
     void onFailClientListener(BluetoothClientThread thread);
 }

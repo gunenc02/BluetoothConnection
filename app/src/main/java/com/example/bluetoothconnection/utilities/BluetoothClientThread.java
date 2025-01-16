@@ -7,10 +7,13 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.example.bluetoothconnection.activities.MainActivity;
 import com.example.bluetoothconnection.listener.SocketStateListener;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.UUID;
 
 public class BluetoothClientThread extends Thread {
@@ -25,9 +28,9 @@ public class BluetoothClientThread extends Thread {
     private static BluetoothClientThread client;
     private SocketStateListener listener;
 
-    public static BluetoothClientThread getClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, BluetoothSocket socket, SocketStateListener listener){
+    public static BluetoothClientThread getClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, SocketStateListener listener){
         if(client == null){
-            client = new BluetoothClientThread(ctx, device, adapter, socket, listener);
+            client = new BluetoothClientThread(ctx, device, adapter, listener);
         }
         return client;
     }
@@ -39,36 +42,55 @@ public class BluetoothClientThread extends Thread {
     public static BluetoothSocket getSocket(){
         return mmSocket;
     }
-    public BluetoothClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, BluetoothSocket socket, SocketStateListener listener){
+    public BluetoothClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter, SocketStateListener listener){
         this.ctx = ctx;
-        mmSocket = socket;
         mmDevice = device;
         this.bluetoothAdapter = adapter;
         this.listener = listener;
     }
 
     public void run() {
-        // Cancel discovery because it otherwise slows down the connection.
-        if(ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
-            ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
-            ctx.checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED){
+        if(ctx.checkSelfPermission(Manifest.permission.BLUETOOTH) != PackageManager.PERMISSION_GRANTED ||
+                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_ADMIN) != PackageManager.PERMISSION_GRANTED ||
+                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED ||
+                ctx.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED ||
+                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED){
             checkPermissions();
         }
-        bluetoothAdapter.cancelDiscovery();
-        //mmDevice.createBond();
+
+        BluetoothSocket tmp;
         try {
-            // Connect to the remote device through the socket. This call blocks
-            // until it succeeds or throws an exception.
+            tmp = mmDevice.createRfcommSocketToServiceRecord(MY_UUID);
+        } catch (IOException e) {
+            Log.e(TAG, "Socket's create() method failed", e);
+            tmp = null;
+        }
+        mmSocket = tmp;
+        bluetoothAdapter.cancelDiscovery();
+        try {
             mmSocket.connect();
-            listener.onClientListener(mmSocket);
+            isConnectionAccepted();
         } catch (IOException connectException) {
             Log.e(TAG, "Connection failed, trying to close the socket", connectException);
-            try {
-                mmSocket.close();
+        }
+    }
+
+    private void isConnectionAccepted() {
+        try {
+            InputStream stream = mmSocket.getInputStream();
+            int result = stream.read(); // think as if they are boolean, 1 for true, 0 for false
+            if(result == 1){
+                listener.onClientListener();
+            } else {
+                ((MainActivity)ctx).runOnUiThread(() -> {
+                    Toast.makeText(ctx, "Connection rejected", Toast.LENGTH_SHORT).show();
+                });
                 listener.onFailClientListener(this);
-            } catch (Exception closeException) {
-                Log.e(TAG, "Could not close the client socket", closeException);
             }
+        } catch (IOException e) {
+            listener.onFailClientListener(this);
+            throw new RuntimeException(e);
         }
     }
     // Closes the client socket and causes the thread to finish.
