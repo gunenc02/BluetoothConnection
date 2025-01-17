@@ -4,13 +4,19 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp">
+    <Button
+        android:id="@+id/btn_device_enable"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="make devıce detectable"
+        android:layout_marginBottom="16dp" />
 
     <!-- Start Scanning Button -->
     <Button
         android:id="@+id/btn_scan_devices"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Scan for Devices"
+        android:text="scan for devıces"
         android:layout_marginBottom="16dp" />
 
     <!-- Devices List Header -->

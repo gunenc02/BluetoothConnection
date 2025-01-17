@@ -11,7 +11,6 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.example.bluetoothconnection.activities.MainActivity;
-import com.example.bluetoothconnection.listener.SocketStateListener;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,7 +26,6 @@ public class BluetoothClientThread extends Thread {
     private final static String TAG = "BluetoothClientThread";
     private final BluetoothAdapter bluetoothAdapter;
     private static BluetoothClientThread client;
-    private SocketStateListener listener;
 
     public static BluetoothClientThread getClientThread(Context ctx, BluetoothDevice device, BluetoothAdapter adapter){
         if(client == null){
@@ -72,6 +70,7 @@ public class BluetoothClientThread extends Thread {
             isConnectionAccepted();
         } catch (IOException connectException) {
             Log.e(TAG, "Connection failed, trying to close the socket", connectException);
+            client.cancel();
         }
     }
 
@@ -95,11 +94,10 @@ public class BluetoothClientThread extends Thread {
     // Closes the client socket and causes the thread to finish.
     public void cancel() {
         try {
-            if(mmSocket.isConnected()){
+            if(mmSocket != null && mmSocket.isConnected()){
                 mmSocket.close();
             }
             client = null;
-            this.join();
         } catch (Exception e) {
             Log.e(TAG, "Could not close the client socket", e);
         }

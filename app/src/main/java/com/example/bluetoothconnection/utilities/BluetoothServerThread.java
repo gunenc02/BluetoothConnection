@@ -12,13 +12,10 @@ import android.os.Build;
 import android.util.Log;
 
 import com.example.bluetoothconnection.activities.MainActivity;
-import com.example.bluetoothconnection.listener.SocketStateListener;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 
 public class BluetoothServerThread extends Thread {
     private BluetoothServerSocket mmServerSocket;
@@ -55,13 +52,13 @@ public class BluetoothServerThread extends Thread {
     }
 
     public void run() {
-        BluetoothServerSocket tmp = null;
-
+        BluetoothServerSocket tmp;
+        checkPermissions();
         // Wait for permissions
-        if(ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED){
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED){
             checkPermissions();
         }
-
         try {
             tmp = bluetoothAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID);
         } catch (IOException e) {
@@ -69,9 +66,7 @@ public class BluetoothServerThread extends Thread {
             return;
         }
         mmServerSocket = tmp;
-
-        // Keep listening until a socket is accepted or an exception occurs
-        while (true) {
+        while(true){
             try {
                 socket = mmServerSocket.accept();
                 answerConnectionRequest(socket);
@@ -80,6 +75,7 @@ public class BluetoothServerThread extends Thread {
                 break;
             }
         }
+
     }
 
     private void checkPermissions(){
@@ -125,11 +121,10 @@ public class BluetoothServerThread extends Thread {
     public void cancel() {
         try {
             mmServerSocket.close();
-            if(socket.isConnected()){
+            if(socket != null && socket.isConnected()){
                 socket.close();
             }
             server = null;
-            this.join();
         } catch (Exception e) {
             Log.e(TAG, "Could not close the connect socket", e);
         }

@@ -2,10 +2,8 @@ package com.example.bluetoothconnection.activities;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -16,7 +14,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -28,35 +25,33 @@ import com.example.bluetoothconnection.listener.SocketStateListener;
 import com.example.bluetoothconnection.utilities.BluetoothClientThread;
 import com.example.bluetoothconnection.utilities.BluetoothServerThread;
 
-import java.io.IOException;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 
 public class MainActivity extends AppCompatActivity implements SocketStateListener {
     private BluetoothAdapter bluetoothAdapter;
     private Button btnScanDevices;
+
+    private Button btnMakeDetectable;
     private LinearLayout deviceContainer;
     BluetoothServerThread server;
     BluetoothClientThread client; // if it is null, should not activate stop function
     private final static String TAG = "MainActivity";
     private Boolean isPermissionsRequested = false;
-
-    private CountDownLatch latch;
     Intent discoverableIntent;
+
+    Boolean isDetectable;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        isDetectable = false;
         btnScanDevices = findViewById(R.id.btn_scan_devices);
         deviceContainer = findViewById(R.id.device_container);
-
+        btnMakeDetectable = findViewById(R.id.btn_device_enable);
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         client = null;
 
-        latch = new CountDownLatch(1);
         if (bluetoothAdapter == null) {
             btnScanDevices.setEnabled(false);
             onDestroy();
@@ -65,25 +60,8 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
 
         checkPermissions();
         btnScanDevices.setOnClickListener(v -> scanDevices());
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        registerReceiver(bluetoothReceiver, filter);
+        btnMakeDetectable.setOnClickListener(v -> makeDetectable());
 
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
-                bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
-            makeVisible();
-        }
-
-        if(server == null){
-            startBluetoothServerThread();
-        }
     }
 
     @Override
@@ -138,7 +116,23 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
             checkPermissions();
         }
 
+        if(bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE){
+            isDetectable = false;
+            Toast.makeText(this, "You need to make your device detectable", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if(!isDetectable){
+            Toast.makeText(this, "You need to make your device detectable", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         deviceContainer.removeAllViews();
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        registerReceiver(bluetoothReceiver, filter);
 
         Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
         bluetoothAdapter.startDiscovery();
@@ -146,6 +140,16 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
             for (BluetoothDevice device : pairedDevices) {
                 addDeviceButton(device, true);
             }
+        }
+
+
+    }
+
+    private void makeDetectable(){
+        isDetectable = true;
+        makeVisible();
+        if(server == null){
+            startBluetoothServerThread();
         }
     }
 
@@ -211,7 +215,6 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
             this.requestPermissions(permissions, 1);
         }
         isPermissionsRequested = true;
-        latch.countDown();
     }
 
     @Override
@@ -255,15 +258,17 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
     }
 
     @Override
-    public void onFailClientListener(BluetoothClientThread thread) {
-        thread.cancel();
-        client = null;
+    public void onFailClientListener(BluetoothClientThread client) {
+        client.cancel();
+        this.client = null;
         onRestart();
     }
 
     private void makeVisible(){
         if(checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED){
             checkPermissions();
+            Toast.makeText(this, "permission needed", Toast.LENGTH_SHORT).show();
+            return;
         }
         discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
