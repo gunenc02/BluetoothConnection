@@ -1,7 +1,7 @@
 package com.example.bluetoothconnection.activities;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothSocket;
-import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -10,8 +10,8 @@ import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -29,6 +29,7 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
     private ArrayAdapter<String> adapter;
     private Button sendButton, backButton;
     private ListView listView;
+    private TextView textView;
     private EditText editText;
     private BluetoothService service;
     private BluetoothSocket socket;
@@ -58,10 +59,12 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
         }
     };
 
+    @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.chat_screen);
+        textView = findViewById(R.id.device_name);
         listView = findViewById(R.id.messages);
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
         listView.setAdapter(adapter);
@@ -70,6 +73,7 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
         editText = findViewById(R.id.edit_text_message);
         service = new BluetoothService(mHandler);
         socket = getSocket();
+        textView.setText(socket.getRemoteDevice().getName());
         thread = service.startConnectedThread(socket, this);
         sendButton.setOnClickListener(v -> sendMessage());
         backButton.setOnClickListener(v -> back());
@@ -91,15 +95,13 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
        try{
            socket.close();
        } catch (Exception e) {
-           Log.e("BluetoothChatActivity", "cannot close the socket");
+           Log.e(TAG, "cannot close the socket");
        }
     }
 
     @Override
     public void onSocketCloseListener() {
-        this.runOnUiThread(() -> {
-            Toast.makeText(this, "Connection closed", Toast.LENGTH_SHORT).show();
-        });
+        this.runOnUiThread(() -> Toast.makeText(this, "Connection closed", Toast.LENGTH_SHORT).show());
         finish();
     }
 }

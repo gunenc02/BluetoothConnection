@@ -30,7 +30,6 @@ import java.util.Set;
 public class MainActivity extends AppCompatActivity implements SocketStateListener {
     private BluetoothAdapter bluetoothAdapter;
     private Button btnScanDevices;
-
     private Button btnMakeDetectable;
     private LinearLayout deviceContainer;
     BluetoothServerThread server;
@@ -38,7 +37,6 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
     private final static String TAG = "MainActivity";
     private Boolean isPermissionsRequested = false;
     Intent discoverableIntent;
-
     Boolean isDetectable;
 
     @Override
@@ -265,7 +263,8 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
     }
 
     private void makeVisible(){
-        if(checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED){
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                checkSelfPermission(Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED){
             checkPermissions();
             Toast.makeText(this, "permission needed", Toast.LENGTH_SHORT).show();
             return;
