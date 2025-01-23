@@ -20,6 +20,10 @@ public class BluetoothService {
         this.handler = handler;
     }
 
+    public Handler getHandler() {
+        return handler;
+    }
+
     public ConnectedThread startConnectedThread(BluetoothSocket socket, SocketClosingListener listener){
         ConnectedThread thread = new ConnectedThread(socket, listener);
         thread.start();
