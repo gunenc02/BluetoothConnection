@@ -24,6 +24,9 @@ import com.example.bluetoothconnection.service.BluetoothService;
 import com.example.bluetoothconnection.utilities.BluetoothClientThread;
 import com.example.bluetoothconnection.utilities.BluetoothServerThread;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class BluetoothChatActivity extends AppCompatActivity implements SocketClosingListener {
 
     private ArrayAdapter<String> adapter;
@@ -33,6 +36,7 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
     private EditText editText;
     private BluetoothService service;
     private BluetoothSocket socket;
+    private List<String> messageList;
     public static final String TAG = "BluetoothChatActivity";
     BluetoothService.ConnectedThread thread;
 
@@ -41,15 +45,17 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
         public void handleMessage(@NonNull Message msg) {
             byte[] readBuffer = (byte[]) msg.obj;
             int bytesRead = msg.arg1;
-            String receivedMessage = new String(readBuffer, 0, bytesRead);
+            String message = new String(readBuffer, 0, bytesRead);
             switch (msg.what) {
                 case 0: // MESSAGE_READ
-                    receivedMessage = "Received: " + receivedMessage;
-                    adapter.add(receivedMessage);
+                    message = "Received: " + message;
+                    messageList.add(message);
+                    adapter.notifyDataSetChanged();
                     break;
                 case 1: // MESSAGE_WRITE
-                    receivedMessage = "Sent: "+ receivedMessage;
-                    adapter.add(receivedMessage);
+                    message = "Sent: "+ message;
+                    messageList.add(message);
+                    adapter.notifyDataSetChanged();
                     editText.setText("");
                     break;
                 case 2: // MESSAGE_TOAST
@@ -66,7 +72,8 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
         setContentView(R.layout.chat_screen);
         textView = findViewById(R.id.device_name);
         listView = findViewById(R.id.messages);
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
+        messageList = new ArrayList<>();
+        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,messageList);
         listView.setAdapter(adapter);
         sendButton = findViewById(R.id.button_send);
         backButton = findViewById(R.id.button_back);
@@ -100,8 +107,29 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
     }
 
     @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putStringArrayList("messageList", new ArrayList<>(messageList));
+    }
+
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        ArrayList<String> savedMessages = savedInstanceState.getStringArrayList("messageList");
+        if (savedMessages != null) {
+            messageList.addAll(savedMessages);
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+    @Override
     public void onSocketCloseListener() {
         this.runOnUiThread(() -> Toast.makeText(this, "Connection closed", Toast.LENGTH_SHORT).show());
         finish();
+    }
+
+    protected void onDestroy(){
+        super.onDestroy();
+        messageList.clear();
     }
 }
