@@ -1,10 +1,10 @@
 package com.example.bluetoothconnection.ViewModel;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
@@ -19,8 +19,9 @@ import java.util.List;
 public class ChatViewModel extends ViewModel {
     public BluetoothService service;
     public MutableLiveData<List<String>> messageList = new MutableLiveData<>(new ArrayList<>());
+    public ArrayList<String> currentMessages;
     public Handler handler;
-    public ArrayAdapter<String> adapter;
+
     private BluetoothChatActivity act;
 
     public void initHandlerAndService(){
@@ -28,7 +29,6 @@ public class ChatViewModel extends ViewModel {
             handler = new Handler(Looper.getMainLooper()) {
                 @Override
                 public void handleMessage(@NonNull Message msg) {
-                    List<String> currentMessages = messageList.getValue();
                     if(currentMessages == null){
                         currentMessages = new ArrayList<>();
                     }
@@ -45,15 +45,14 @@ public class ChatViewModel extends ViewModel {
                             currentMessages.add(message);
                             break;
                     }
-                    messageList.setValue(currentMessages);
-                    adapter.notifyDataSetChanged();
-                    act.warn(message);
+                    warn();
                 }
             };
         }
 
         if (service == null){
             service = new BluetoothService(handler);
+            currentMessages = (ArrayList)messageList.getValue();
         }
     }
 
@@ -65,11 +64,16 @@ public class ChatViewModel extends ViewModel {
         return messageList;
     }
 
-    public void setAdapter(ArrayAdapter<String> adapter) {
-        this.adapter = adapter;
+    public List<String> getList(){
+        return messageList.getValue();
     }
 
     public void setListener(BluetoothChatActivity bluetoothChatActivity) {
         this.act = bluetoothChatActivity;
+    }
+
+    public void warn() {
+        messageList.setValue((List<String>) currentMessages.clone());
+        act.warn(messageList);
     }
 }

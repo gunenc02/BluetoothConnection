@@ -19,8 +19,11 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.bluetoothconnection.R;
+import com.example.bluetoothconnection.ViewModel.ChatViewModel;
+import com.example.bluetoothconnection.ViewModel.MainViewModel;
 import com.example.bluetoothconnection.listener.SocketStateListener;
 import com.example.bluetoothconnection.utilities.BluetoothClientThread;
 import com.example.bluetoothconnection.utilities.BluetoothServerThread;
@@ -37,13 +40,13 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
     private final static String TAG = "MainActivity";
     private Boolean isPermissionsRequested = false;
     Intent discoverableIntent;
-    Boolean isDetectable;
+    private MainViewModel model;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        isDetectable = false;
+
         btnScanDevices = findViewById(R.id.btn_scan_devices);
         deviceContainer = findViewById(R.id.device_container);
         btnMakeDetectable = findViewById(R.id.btn_device_enable);
@@ -59,6 +62,9 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
         checkPermissions();
         btnScanDevices.setOnClickListener(v -> scanDevices());
         btnMakeDetectable.setOnClickListener(v -> makeDetectable());
+
+        model = new ViewModelProvider(this).get(MainViewModel.class);
+        model.init();
 
     }
 
@@ -115,12 +121,12 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
         }
 
         if(bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE){
-            isDetectable = false;
+            model.setFalse();
             Toast.makeText(this, "You need to make your device detectable", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if(!isDetectable){
+        if(!model.getIsDetectable()){
             Toast.makeText(this, "You need to make your device detectable", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -144,7 +150,7 @@ public class MainActivity extends AppCompatActivity implements SocketStateListen
     }
 
     private void makeDetectable(){
-        isDetectable = true;
+        model.setTrue();
         makeVisible();
         if(server == null){
             startBluetoothServerThread();

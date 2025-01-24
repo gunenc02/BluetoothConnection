@@ -58,16 +58,9 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
         model = new ViewModelProvider(this).get(ChatViewModel.class);
         model.initHandlerAndService();
         mutableMessageList = model.getMessageList();
-
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mutableMessageList.getValue());
+        Log.i(TAG, mutableMessageList.getValue().toString());
+        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
         listView.setAdapter(adapter);
-        model.setAdapter(adapter);
-
-        model.getMessageList().observe(this, message -> {
-            adapter.clear();
-            adapter.addAll();
-            adapter.notifyDataSetChanged();
-        });
 
         model.setListener(this);
         socket = getSocket();
@@ -76,6 +69,7 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
         thread = model.getBluetoothService().startConnectedThread(socket, this);
         sendButton.setOnClickListener(v -> sendMessage());
         backButton.setOnClickListener(v -> back());
+        model.warn();
     }
 
     private BluetoothSocket getSocket(){
@@ -105,8 +99,10 @@ public class BluetoothChatActivity extends AppCompatActivity implements SocketCl
         finish();
     }
 
-    public void warn(String message) {
-        mutableMessageList.getValue().add(message);
+    public void warn(MutableLiveData<List<String>> messageList) {
+        List<String> list = messageList.getValue();
+        adapter.clear();
+        adapter.addAll(list);
         adapter.notifyDataSetChanged();
     }
 }
